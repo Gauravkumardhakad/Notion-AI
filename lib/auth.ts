@@ -1,43 +1,33 @@
-import NextAuth from "next-auth";
-import  CredentialsProvider  from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import NextAuth, { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./db";
 import bcrypt from "bcryptjs";
 
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    CredentialsProvider({
+      name: "Sign in with Email",
+      credentials: {
+        email: { label: "Email", type: "text", placeholder: "Enter email" },
+        password: { label: "Password", type: "password", placeholder: "Enter password" },
+      },
+      async authorize(credentials):Promise<any> {
+        const enteredEmail = credentials?.email;
+        const enteredPassword = credentials?.password;
 
-export const handler=NextAuth({
-    adapter:PrismaAdapter(prisma),
-    providers:[
-        CredentialsProvider({
-            name:"Sign in with Email",
+        const user = await prisma.user.findUnique({ where: { email: enteredEmail } });
 
-            credentials:{
-                email:{label:"Username", type:"text" , placeholder:"enter email"},
-                password:{label:"password", type:"password", placeholder:"enter password"}
-            },
+        if (!user) return null;
 
-            async authorize(credentials){
-                // logic here to verify the credentials
-                const enteredEmail=credentials?.email;
-                const enteredPassword=credentials?.password;
+        // bcrypt logic baad me 
+        const isValid = (user.password===enteredPassword);
+        return isValid ? user : null;
+      },
+    }),
+  ],
+  secret: process.env.NEXTAUTH_SECRET,
+};
 
-                const user=await prisma.user.findUnique({where:{email:enteredEmail}});
-
-                if(!user) {
-                    return null;
-                }
-                // i will implement bcrypt logic later here
-                const isValid=(user.password===enteredPassword);
-
-                if(isValid){
-                    return user;
-                }
-                else{
-                    return null;
-                }
-            },
-            
-        })
-    ],
-    secret:process.env.NEXTAUTH_SECRET
-})
+export const handler = NextAuth(authOptions);
