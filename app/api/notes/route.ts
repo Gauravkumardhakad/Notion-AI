@@ -71,4 +71,10 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(note);
 }
 
+export async function PUT(req:NextRequest){
+
+  const session=await getServerSession();
+
+  
+}
 
