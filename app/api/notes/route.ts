@@ -18,7 +18,7 @@ export async function GET(req:NextRequest){
   })
 
   if(!user){
-    return NextResponse.json({ error: "user not found" }, { status: 401 });
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const notes=await prisma.note.findMany({
@@ -26,7 +26,7 @@ export async function GET(req:NextRequest){
       userId:user.id,
     }
   })
-  
+
   return NextResponse.json(notes);
 
 }
@@ -41,7 +41,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { title, content } = await req.json();
+  let title, content;
+  try {
+    ({ title, content } = await req.json());
+  } catch (error) {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
 
   if (!title || !content) {
     return NextResponse.json({ error: "Missing title or content" }, { status: 400 });
