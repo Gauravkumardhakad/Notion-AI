@@ -15,7 +15,7 @@ export async function PUT(req:NextRequest,context: { params: Promise<{ id: strin
     const {title, content}=await req.json();
     const noteId=params.id;
 
-    console.log(typeof(noteId));
+    //console.log(typeof(noteId));
 
     if (!title || !content) {
         return NextResponse.json({ error: "Missing title or content" }, { status: 400 });
@@ -45,3 +45,40 @@ export async function PUT(req:NextRequest,context: { params: Promise<{ id: strin
 
     return NextResponse.json(updatedNote);
 }   
+
+
+export async function DELETE(req:NextRequest,context:{params:Promise<{ id:string }>}){
+    const params=await context.params;
+    const session=await getServerSession();
+
+    if(!session || !session.user?.email){
+        return NextResponse.json({error:"anauthorized"},{status:401});
+    }
+
+    const noteId=parseInt(params.id);
+
+    const note=await prisma.note.findFirst({
+        where:{
+            id:noteId
+        },
+        include:{
+            user:true
+        }
+    })
+
+    if(!note){
+        return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    }
+
+    if (note.user.email !== session.user.email) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    await prisma.note.delete({
+        where:{
+            id:noteId
+        }
+    });
+
+    return NextResponse.json({msg:"Note deleted successfully"});
+}

@@ -22,7 +22,8 @@ export const authOptions: NextAuthOptions = {
         if (!user) return null;
 
         // bcrypt logic baad me 
-        const isValid = (user.password===enteredPassword);
+        
+        const isValid =await bcrypt.compare(enteredPassword,user.password);
         return isValid ? user : null;
       },
     }),
